@@ -16,6 +16,7 @@
     "nodemon": "^3.1.7"
   },
   "dependencies": {
-    "@hapi/hapi": "^21.3.12"
+    "@hapi/hapi": "^21.3.12",
+    "firebase": "^11.0.2"
   }
 }

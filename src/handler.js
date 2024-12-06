@@ -2,7 +2,20 @@ const { nanoid } = require("nanoid");
 const users = require(/* dari db */);
 
 const registerUserHandler = (request, h) => {
-  const { name, email, phone, role } = request.payload;
+  const {
+    name,
+    email,
+    phone,
+    role,
+    foodType,
+    quantityFood,
+    latitude,
+    longitude,
+    conditionFood,
+    childFood,
+    elderlyFood,
+    allergenFood,
+  } = request.payload;
 
   if (role !== "donor" && role !== "recipient") {
     const response = h.response({
@@ -13,12 +26,44 @@ const registerUserHandler = (request, h) => {
     return response;
   }
 
+  if (role === "recipient") {
+    if (
+      !foodType ||
+      !quantityFood ||
+      !conditionFood ||
+      !latitude ||
+      !longitude
+    ) {
+      const response = h.response({
+        status: "fail",
+        message:
+          "Recipient must fill name, email, phone, latitude, and longitude",
+      });
+      response.code(400);
+      return response;
+    }
+  }
   const newUser = {
     userId: users.length + 1,
     name,
     email,
     phone,
     role,
+    ...(role === "recipient" && {
+      donationDetails: {
+        foodType,
+        quantityFood,
+        conditionFood,
+        location: {
+          latitude,
+          longitude,
+        },
+        conditionFood,
+        childFood,
+        elderlyFood,
+        allergenFood,
+      },
+    }),
   };
 
   users.push(newUser);
@@ -38,36 +83,6 @@ const registerUserHandler = (request, h) => {
   });
   response.code(500);
   return response;
-};
-
-const checkRoleRecipient = (request, h) => {
-  const { role } = request.payload;
-
-  users.pull(newUser);
-
-  if (role !== "recipient") {
-    const response = h.response({
-      status: "fail",
-      message: "Invalid role. Role must be recipient",
-    });
-    response.code(400);
-    return response;
-  }
-};
-
-const checkRoleDonor = (request, h) => {
-  const { role } = request.payload;
-
-  users.pull(newUser);
-
-  if (role !== "donor") {
-    const response = h.response({
-      status: "fail",
-      message: "Invalid role. Role must be donor",
-    });
-    response.code(400);
-    return response;
-  }
 };
 
 const loginUserHandler = (request, h) => {
@@ -95,18 +110,28 @@ const loginUserHandler = (request, h) => {
   return response;
 };
 
-const createDonationsHandler = (request, h) => {
+const createDonationsHandler = async (request, h) => {
   const {
     foodType,
     quantityFood,
-    location,
     conditionFood,
+    latitude,
+    longitude,
     childFood,
     elderlyFood,
     allergenFood,
   } = request.payload;
 
   const donationId = newDonation.length + 1;
+
+  if (role !== "donor") {
+    const response = h.response({
+      status: "fail",
+      message: "Invalid role. Role must be donor",
+    });
+    response.code(403);
+    return response;
+  }
 
   if (!foodType) {
     const response = h.response({
@@ -148,88 +173,37 @@ const createDonationsHandler = (request, h) => {
     donationId,
     foodType,
     quantityFood,
-    location,
+    location: {
+      latitude: latitude,
+      longitude: longitude,
+    },
     conditionFood,
     childFood,
     elderlyFood,
     allergenFood,
   };
 
-  const response = h.response({
-    status: "success",
-    message: "Donasi Berhasil Ditambahkan",
-    data: newDonation,
-  });
-  response.code(201);
-  return response;
-
-  const getDonations = (request, h) => {};
+  try {
+    await addDonation(newDonation);
+    const response = h.response({
+      status: "success",
+      message: "Donasi berhasil ditambahkan",
+      data: newDonation,
+    });
+    response.code(201);
+    return response;
+  } catch (error) {
+    const response = h.response({
+      status: "fail",
+      message: "Gagal menambahkan Donasi",
+    });
+    response.code(500);
+    return response;
+  }
 };
 
 module.exports = {
   registerUserHandler,
   loginUserHandler,
   createDonationsHandler,
-};
-
-const addLocation = (request, h) => {
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(success, error);
-  } else {
-    alert("Geolocation is not supported by this browser.");
-  }
-
-  function success(position) {
-    var latitude = position.coords.latitude;
-    var longitude = position.coords.longitude;
-
-    // Lakukan sesuatu dengan latitude dan longitude, misalnya menampilkannya pada sebuah elemen
-    document.getElementById("location").innerHTML = "Latitude: " + latitude + "<br>Longitude: " + longitude;
-  }
-
-  function error() {
-      alert("Unable to retrieve your location");
-  }
-
-  const locationId = nanoid(20);
-
-  if (!latitude) {
-    const response = h.response({
-      status: "fail",
-      message: "Gagal menambahkan lokasi. Mohon menentukan posisi dengan benar",
-    });
-    response.code(400);
-    return response;
-  }
-
-  if (!longitude) {
-    const response = h.response({
-      status: "fail",
-      message: "Gagal menambahkan lokasi. Mohon menentukan posisi dengan benar",
-    });
-    response.code(400);
-    return response;
-  }
-
-  const newLocation = {
-    locationId,
-    latitude,
-    longitude,
-  };
-
-  const response = h.response({
-    status: "success",
-    message: "Lokasi Berhasil Ditambahkan",
-    data: newLocation,
-  });
-  response.code(201);
-  return response;
-
-  function initMap() {
-    var myLatLng = {lat: -5.395512338172377, lng: 105.2894940149432}; // Ganti dengan koordinat awal
-    var map = new google.maps.Map(document.getElementById('map'), {
-        zoom: 4,
-        center: myLatLng
-    });
-  }
 };
