@@ -118,3 +118,44 @@ const createDonations = (request, h) => {
   response.code(201);
   return response;
 };
+
+const addLocation = (request, h) => {
+  const {
+    latitude,
+    longitude,
+  } = request.payload;
+
+  const locationId = nanoid(20);
+
+  if (!latitude) {
+    const response = h.response({
+      status: "fail",
+      message: "Gagal menambahkan lokasi. Mohon menentukan posisi dengan benar",
+    });
+    response.code(400);
+    return response;
+  }
+
+  if (!longitude) {
+    const response = h.response({
+      status: "fail",
+      message: "Gagal menambahkan lokasi. Mohon menentukan posisi dengan benar",
+    });
+    response.code(400);
+    return response;
+  }
+
+  const newLocation = {
+    locationId,
+    latitude,
+    longitude,
+  };
+
+  const response = h.response({
+    status: "success",
+    message: "Lokasi Berhasil Ditambahkan",
+    data: newLocation,
+  });
+  response.code(201);
+  return response;
+};
