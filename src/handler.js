@@ -43,6 +43,8 @@ const registerUserHandler = (request, h) => {
 const checkRoleRecipient = (request, h) => {
   const { role } = request.payload;
 
+  users.pull(newUser);
+
   if (role !== "recipient") {
     const response = h.response({
       status: "fail",
@@ -55,6 +57,8 @@ const checkRoleRecipient = (request, h) => {
 
 const checkRoleDonor = (request, h) => {
   const { role } = request.payload;
+
+  users.pull(newUser);
 
   if (role !== "donor") {
     const response = h.response({
