@@ -42,6 +42,32 @@ const registerUserHandler = (request, h) => {
   return response;
 };
 
+const checkRoleRecipient = (request, h) => {
+  const { role } = request.payload;
+
+  if (role !== "recipient") {
+    const response = h.response({
+      status: "fail",
+      message: "Invalid role. Role must be recipient",
+    });
+    response.code(400);
+    return response;
+  }
+};
+
+const checkRoleDonor = (request, h) => {
+  const { role } = request.payload;
+
+  if (role !== "donor") {
+    const response = h.response({
+      status: "fail",
+      message: "Invalid role. Role must be donor",
+    });
+    response.code(400);
+    return response;
+  }
+};
+
 const loginUserHandler = (request, h) => {
   const { email, password } = request.payload;
 
