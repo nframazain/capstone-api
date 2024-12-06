@@ -1,5 +1,5 @@
 const { nanoid } = require("nanoid");
-const users = requre(/* dari db */);
+const users = require(/* dari db */);
 
 const registerUserHandler = (request, h) => {
   const { name, email, phone, role } = request.payload;
@@ -13,10 +13,8 @@ const registerUserHandler = (request, h) => {
     return response;
   }
 
-  const userId = nanoid(16);
-
   const newUser = {
-    userId,
+    userId: users.length + 1,
     name,
     email,
     phone,
@@ -29,7 +27,7 @@ const registerUserHandler = (request, h) => {
     const response = h.response({
       status: "success",
       message: "User added successfully",
-      data: newUser,
+      data: { id: newUser.userId, role: newUser.role },
     });
     response.code(201);
     return response;
@@ -74,9 +72,26 @@ const loginUserHandler = (request, h) => {
   const user = users.find(
     (user) => user.email === email && user.password === password
   );
+
+  if (!user) {
+    const response = h.response({
+      status: "fail",
+      message: "Invalid email or password",
+    });
+    response.code(401);
+    return response;
+  }
+
+  const response = h.response({
+    status: "success",
+    message: "Login Successful",
+    data: { id: user.userId, role: user.role },
+  });
+  response.code(200);
+  return response;
 };
 
-const createDonations = (request, h) => {
+const createDonationsHandler = (request, h) => {
   const {
     foodType,
     quantityFood,
@@ -87,7 +102,7 @@ const createDonations = (request, h) => {
     allergenFood,
   } = request.payload;
 
-  const donationId = nanoid(10);
+  const donationId = newDonation.length + 1;
 
   if (!foodType) {
     const response = h.response({
@@ -143,6 +158,14 @@ const createDonations = (request, h) => {
   });
   response.code(201);
   return response;
+
+  const getDonations = (request, h) => {};
+};
+
+module.exports = {
+  registerUserHandler,
+  loginUserHandler,
+  createDonationsHandler,
 };
 
 const addLocation = (request, h) => {
