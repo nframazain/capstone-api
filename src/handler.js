@@ -1,30 +1,30 @@
 const { nanoid } = require("nanoid");
-const users = require(/* dari db */);
+import { db } from "./services";
+import {
+  collection,
+  addDoc,
+  getDoc,
+  updateDoc,
+  deleteDoc,
+} from "firebase/firestore";
+const { bcrypt } = require("bcrypt");
 
-const registerUserHandler = (request, h) => {
+const registerUserHandler = async (request, h) => {
   const {
     name,
     email,
+    password,
     phone,
     role,
-    foodType,
-    quantityFood,
-    latitude,
-    longitude,
-    conditionFood,
-    childFood,
-    elderlyFood,
-    allergenFood,
+    foodType, // only for recipients
+    quantityFood, // only for recipients
+    latitude, // only for recipients
+    longitude, // only for recipients
+    conditionFood, // only for recipients
+    childFood, // only for recipients
+    elderlyFood, // only for recipients
+    allergenFood, // only for recipients
   } = request.payload;
-
-  if (role !== "donor" && role !== "recipient") {
-    const response = h.response({
-      status: "fail",
-      message: "Invalid role. Role must be filled",
-    });
-    response.code(400);
-    return response;
-  }
 
   if (role === "recipient") {
     if (
@@ -47,6 +47,7 @@ const registerUserHandler = (request, h) => {
     userId: users.length + 1,
     name,
     email,
+    password,
     phone,
     role,
     ...(role === "recipient" && {
@@ -66,23 +67,109 @@ const registerUserHandler = (request, h) => {
     }),
   };
 
-  users.push(newUser);
-
-  if (isSuccess) {
+  try {
+    const collectionName = role === "donor" ? "donors" : "recipients";
+    const docRef = await addDoc(collection(db, collectionName), newUser);
     const response = h.response({
       status: "success",
-      message: "User added successfully",
-      data: { id: newUser.userId, role: newUser.role },
+      message: "User created successfully",
+      data: { id: docRef.id, role: newUser.role },
     });
     response.code(201);
     return response;
+  } catch (error) {
+    const response = h.response({
+      status: "fail",
+      message: "User failed to register",
+    });
+    response.code(500);
+    return response;
   }
-  const response = h.response({
-    status: "fail",
-    message: "User failed to register",
-  });
-  response.code(500);
-  return response;
+};
+// end register user handler
+
+const getUserHandler = async (request, h) => {
+  const { id } = request.params;
+
+  try {
+    const getUser = await getDoc(doc(db, "users", id));
+
+    if (!getUser.exists()) {
+      const response = h.response({
+        status: "fail",
+        message: "User not found",
+      });
+      response.code(404);
+      return response;
+    }
+    const user = userDoc.data();
+    const response = h.response({
+      status: "success",
+      message: "User found",
+      data: user,
+    });
+    response.code(200);
+    return response;
+  } catch (error) {
+    const response = h.response({
+      status: "fail",
+      message: "Failed to get user",
+    });
+    response.code(500);
+    return response;
+  }
+};
+
+const updateUserHandler = async (request, h) => {
+  const { id } = request.params;
+  const { name, password, email, phone, role } = request.payload;
+
+  try {
+    const changeUser = doc(db, "users", id);
+    await updateDoc(changeUser, {
+      name,
+      password,
+      email,
+      phone,
+      role,
+    });
+
+    const response = h.response({
+      status: "success",
+      message: "User updated",
+    });
+    response.code(200);
+    return response;
+  } catch (error) {
+    const response = h.response({
+      status: "fail",
+      message: "Failed to update user",
+    });
+    response.code(500);
+    return response;
+  }
+};
+
+const deleteUserHandler = async (request, h) => {
+  const { id } = request.params;
+
+  try {
+    await deleteDoc(doc(db, "users", id));
+
+    const response = h.response({
+      status: "success",
+      message: "User deleted",
+    });
+    response.code(200);
+    return response;
+  } catch (error) {
+    const response = h.response({
+      status: "fail",
+      message: "Failed to delete user",
+    });
+    response.code(500);
+    return response;
+  }
 };
 
 const loginUserHandler = (request, h) => {
@@ -205,5 +292,8 @@ const createDonationsHandler = async (request, h) => {
 module.exports = {
   registerUserHandler,
   loginUserHandler,
+  getUserHandler,
+  updateUserHandler,
+  deleteUserHandler,
   createDonationsHandler,
 };
