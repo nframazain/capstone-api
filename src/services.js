@@ -1,22 +1,15 @@
-const { initializeApp } = require("firebase/app");
-const { getFirestore } = require("firebase/firestore");
+// const admin = require("firebase-admin");
+// const { getFirestore } = require("firebase-admin/firestore");
 
-const firebaseConfig = {
-  apiKey: "AIzaSyAXglKXqok4YUskv6_YDoMQE-qMaq0jqzk",
-  authDomain: "centering-abode-438216-q7.firebaseapp.com",
-  databaseURL:
-    "https://centering-abode-438216-q7-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "centering-abode-438216-q7",
-  storageBucket: "centering-abode-438216-q7.firebasestorage.app",
-  messagingSenderId: "139087326761",
-  appId: "1:139087326761:web:a85733dadd51899240f638",
-  measurementId: "G-591MJYHZ4Q",
-};
+// var serviceAccount = require("./serviceAccountKey.json");
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// admin.initializeApp({
+//   credential: admin.credential.cert(serviceAccount),
+//   databaseURL:
+//     "https://centering-abode-438216-q7-default-rtdb.asia-southeast1.firebasedatabase.app",
+// });
 
-//untuk Firestore
-const db = getFirestore(app);
+// //untuk Firestore
+// const db = getFirestore();
 
-module.exports = db;
+// module.exports = { db, admin };

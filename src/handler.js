@@ -1,130 +1,126 @@
-const {
-  collection,
-  doc,
-  setDoc,
-  addDoc,
-  getDocs,
-} = require("firebase/firestore");
-const { db } = require("./services");
+const mysql = require("mysql");
 
-const newRecipientsIdHandler = async () => {
-  const counterId = doc(db, "counters", "recipients");
-  const counterSnap = await getDoc(counterId);
+const connection = mysql.createConnection({
+  host: "34.101.229.68",
+  user: "root",
+  database: "safefood",
+  password: "bob123",
+});
 
-  let nextId = 1;
-
-  if (counterSnap.exists()) {
-    nextId = counterSnap.data().lastId + 1;
+const newRecipientIdHandler = async () => {
+  const query =
+    "SELECT id_penerima FROM recipients ORDER BY id_penerima DESC LIMIT 1;";
+  const rows = await connection.query(query);
+  let nextIdNumber = 1;
+  if (rows.length > 0) {
+    const lastId = rows[0].id_penerima;
+    const lastNumber = parseInt(lastId.substring(1));
+    nextIdNumber = lastNumber + 1;
   }
-
-  await setDoc(counterId, { lastId: nextId });
-  return `T${nextId}`;
+  return `T${nextIdNumber}`;
 };
 
-const newDonorsIdHandler = async () => {
-  const counterId = doc(db, "counters", "donors");
-  const counterSnap = await getDoc(counterId);
-
-  let nextId = 1;
-
-  if (counterSnap.exists()) {
-    nextId = counterSnap.data().lastId + 1;
+const newDonorIdHandler = async () => {
+  const query =
+    "SELECT id_penyumbang FROM donors ORDER BY id_donor DESC LIMIT 1;";
+  const rows = await connection.query(query);
+  let nextIdNumber = 1;
+  if (rows.length > 0) {
+    const lastId = rows[0].id_penyumbang;
+    const lastNumber = parseInt(lastId.substring(1));
+    nextIdNumber = lastNumber + 1;
   }
-
-  await setDoc(counterId, { lastId: nextId });
-  return `D${nextId}`;
+  return `D${nextIdNumber}`;
 };
 
 const registerRecipientHandler = async (request, h) => {
-  const {
-    nama_penerima,
-    lokasi_lat_penerima,
-    lokasi_lon_penerima,
-    makanan_dibutuhkan,
-    jumlah_dibutuhkan,
-    kondisi_makanan_diterima,
-    is_halal_receiver,
-    is_for_child_receiver,
-    is_for_elderly_receiver,
-    is_alergan_free,
-    status_penerima,
-    frekuensi_penerima,
-    alamat_penerima,
-    kontak_penerima,
-    email_penerima,
-    tentang_penerima,
-    foto_profil_penerima,
-    username_penerima,
-    password_penerima,
-  } = request.payload;
-
-  const id_penerima = await newRecipientsIdHandler();
-
-  if (
-    !nama_penerima ||
-    !lokasi_lat_penerima ||
-    !lokasi_lon_penerima ||
-    !makanan_dibutuhkan ||
-    !jumlah_dibutuhkan ||
-    !kondisi_makanan_diterima ||
-    !alamat_penerima ||
-    !kontak_penerima ||
-    !email_penerima ||
-    !username_penerima ||
-    !password_penerima ||
-    !is_halal_receiver ||
-    !is_for_child_receiver ||
-    !is_for_elderly_receiver ||
-    !is_alergan_free ||
-    !status_penerima ||
-    !frekuensi_penerima
-  ) {
-    const response = h.response({
-      status: "fail",
-      message: "Recipient must filled the form",
-    });
-    response.code(400);
-    return response;
-  }
-
-  const newRecipient = {
-    id_penerima,
-    nama_penerima,
-    lokasi_lat_penerima,
-    lokasi_lon_penerima,
-    makanan_dibutuhkan,
-    jumlah_dibutuhkan,
-    kondisi_makanan_diterima,
-    is_halal_receiver,
-    is_for_child_receiver,
-    is_for_elderly_receiver,
-    is_alergan_free,
-    status_penerima,
-    frekuensi_penerima,
-    alamat_penerima,
-    kontak_penerima,
-    email_penerima,
-    tentang_penerima,
-    foto_profil_penerima,
-    username_penerima,
-    password_penerima,
-    role: "recipient",
-  };
-
   try {
-    const collectionName = "recipients";
-    const recipient = await addDoc(
-      collection(db, collectionName),
-      newRecipient
-    );
+    const {
+      nama_penerima,
+      lokasi_lat_penerima,
+      lokasi_lon_penerima,
+      makanan_dibutuhkan,
+      jumlah_dibutuhkan,
+      kondisi_makanan_diterima,
+      is_halal_receiver,
+      is_for_child_receiver,
+      is_for_elderly_receiver,
+      is_alergan_free,
+      status_penerima,
+      frekuensi_penerima,
+      alamat_penerima,
+      kontak_penerima,
+      email_penerima,
+      tentang_penerima,
+      foto_profil_penerima,
+      username_penerima,
+      password_penerima,
+    } = request.payload;
+
+    const id_penerima = await newRecipientIdHandler();
+    const role = "recipient";
+
+    if (
+      !nama_penerima ||
+      typeof lokasi_lat_penerima !== "number" ||
+      typeof lokasi_lon_penerima !== "number" ||
+      !makanan_dibutuhkan ||
+      !jumlah_dibutuhkan ||
+      !kondisi_makanan_diterima ||
+      !alamat_penerima ||
+      !kontak_penerima ||
+      !email_penerima ||
+      !username_penerima ||
+      !password_penerima ||
+      is_halal_receiver === undefined ||
+      is_for_child_receiver === undefined ||
+      is_for_elderly_receiver === undefined ||
+      is_alergan_free === undefined ||
+      !status_penerima ||
+      !frekuensi_penerima
+    ) {
+      const response = h.response({
+        status: "fail",
+        message: "Recipient must filled the form",
+      });
+      response.code(400);
+      return response;
+    }
+
+    const queryRecipient =
+      "INSERT INTO recipients (id_penerima, nama_penerima, lokasi_lat_penerima, lokasi_lon_penerima, makanan_dibutuhkan, jumlah_dibutuhkan, kondisi_makanan_diterima, is_halal_receiver, is_for_child_receiver, is_for_elderly_receiver, is_alergan_free, status_penerima, frekuensi_penerima, alamat_penerima, kontak_penerima, email_penerima, tentang_penerima, foto_profil_penerima, username_penerima, password_penerima, role) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+    await connection.query(queryRecipient, [
+      id_penerima,
+      nama_penerima,
+      lokasi_lat_penerima,
+      lokasi_lon_penerima,
+      makanan_dibutuhkan,
+      jumlah_dibutuhkan,
+      kondisi_makanan_diterima,
+      is_halal_receiver,
+      is_for_child_receiver,
+      is_for_elderly_receiver,
+      is_alergan_free,
+      status_penerima,
+      frekuensi_penerima,
+      alamat_penerima,
+      kontak_penerima,
+      email_penerima,
+      tentang_penerima,
+      foto_profil_penerima,
+      username_penerima,
+      password_penerima,
+      role,
+    ]);
     const response = h.response({
       status: "success",
-      message: "User created successfully",
-      data: { id: recipient.id, role: newRecipient.role },
+      message: "Recipient created successfully",
+      id: id_penerima,
     });
     response.code(201);
     return response;
   } catch (error) {
+    console.error(error);
     const response = h.response({
       status: "fail",
       message: "User failed to register",
@@ -136,6 +132,260 @@ const registerRecipientHandler = async (request, h) => {
 // end register user handler
 
 const registerDonorHandler = async (request, h) => {
+  try {
+    const {
+      nama_penyumbang,
+      lokasi_lat_penyumbang,
+      lokasi_lon_penyumbang,
+      alamat_penyumbang,
+      kontak_penyumbang,
+      email_penyumbang,
+      tentang_penyumbang,
+      foto_profil_penyumbang,
+      username_penyumbang,
+      password_penyumbang,
+    } = request.payload;
+
+    const id_penyumbang = await newDonorIdHandler();
+    const role = "donor";
+
+    if (
+      !nama_penyumbang ||
+      !lokasi_lat_penyumbang ||
+      !lokasi_lon_penyumbang ||
+      !alamat_penyumbang ||
+      !kontak_penyumbang ||
+      !email_penyumbang ||
+      !username_penyumbang ||
+      !password_penyumbang
+    ) {
+      const response = h.response({
+        status: "fail",
+        message: "Please fill in all fields",
+      });
+      response.code(400);
+      return response;
+    }
+
+    const queryDonor =
+      "INSERT INTO users (id_penyumbang, nama_penyumbang, lokasi_lat_penyumbang, lokasi_lon_penyumbang, alamat_penyumbang, kontak_penyumbang, email_penyumbang, tentang_penyumbang, foto_profil_penyumbang, username_penyumbang, password_penyumbang, role) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+    await connection.query(queryDonor, [
+      id_penyumbang,
+      nama_penyumbang,
+      lokasi_lat_penyumbang,
+      lokasi_lon_penyumbang,
+      alamat_penyumbang,
+      kontak_penyumbang,
+      email_penyumbang,
+      tentang_penyumbang,
+      foto_profil_penyumbang,
+      username_penyumbang,
+      password_penyumbang,
+      role,
+    ]);
+    const response = h.response({
+      status: "success",
+      message: "Donor added successfully",
+    });
+    response.code(201);
+    return response;
+  } catch (error) {
+    console.error(error);
+    const response = h.response({
+      status: "error",
+      message: "Server error",
+    });
+    response.code(500);
+    return response;
+  }
+};
+
+const getAllRecipientsHandler = async (request, h) => {
+  try {
+    const [rows] = connection.query("SELECT * FROM recipients;");
+    const response = h.response({
+      status: "success",
+      data: { recipients: rows },
+    });
+    response.code(200);
+    return response;
+  } catch (error) {
+    console.error(error);
+    const response = h.response({
+      status: "error",
+      message: "Failed to get all recipients",
+    });
+    response.code(500);
+    return response;
+  }
+};
+
+const getRecipientByIdHandler = async (request, h) => {
+  const { id_penerima } = request.params;
+
+  try {
+    const [rows] = connection.query(
+      "SELECT * FROM recipients WHERE id_penerima = ?",
+      [id_penerima]
+    );
+    if (rows.length === 0) {
+      const response = h.response({
+        status: "error",
+        message: "Recipient not found",
+      });
+      response.code(404);
+      return response;
+    }
+
+    const response = h.response({
+      status: "success",
+      data: { recipient: rows[0] },
+    });
+    response.code(200);
+    return response;
+  } catch (error) {
+    console.error(error);
+    const response = h.response({
+      status: "error",
+      message: "Failed to get recipient by id",
+    });
+    response.code(500);
+    return response;
+  }
+};
+
+const updateRecipientHandler = async (request, h) => {
+  const { id_penerima } = request.params;
+  const {
+    nama_penerima,
+    lokasi_lat_penerima,
+    lokasi_lon_penerima,
+    makanan_dibutuhkan,
+    jumlah_dibutuhkan,
+    kondisi_makanan_diterima,
+    is_halal_receiver,
+    is_for_child_receiver,
+    is_for_elderly_receiver,
+    is_alergan_free,
+    status_penerima,
+    frekuensi_penerima,
+    alamat_penerima,
+    kontak_penerima,
+    email_penerima,
+    tentang_penerima,
+    foto_profil_penerima,
+    username_penerima,
+    password_penerima,
+  } = request.payload;
+
+  try {
+    const [result] = connection.query(
+      "UPDATE recipients SET nama_penerima = ?, lokasi_lat_penerima = ?, lokasi_lon_penerima = ?, makanan_dibutuhkan = ?, jumlah_dibutuhkan = ?, kondisi_makanan_diterima = ?, is_halal_receiver = ?, is_for_child_receiver = ?, is_for_elderly_receiver = ?, is_alergan_free = ?, status_penerima = ?, frekuensi_penerima = ?, alamat_penerima = ?, kontak_penerima = ?, email_penerima = ?, tentang_penerima = ?, foto_profil_penerima = ?, username_penerima = ?, password_penerima = ? WHERE id_penerima = ?",
+      [
+        nama_penerima,
+        lokasi_lat_penerima,
+        lokasi_lon_penerima,
+        makanan_dibutuhkan,
+        jumlah_dibutuhkan,
+        kondisi_makanan_diterima,
+        is_halal_receiver,
+        is_for_child_receiver,
+        is_for_elderly_receiver,
+        is_alergan_free,
+        status_penerima,
+        frekuensi_penerima,
+        alamat_penerima,
+        kontak_penerima,
+        email_penerima,
+        tentang_penerima,
+        foto_profil_penerima,
+        username_penerima,
+        password_penerima,
+        id_penerima,
+      ]
+    );
+
+    if (result.affectedRows === 0) {
+      const response = h.response({
+        status: "fail",
+        message: "Recipient not found or no changes made",
+      });
+      response.code(404);
+      return response;
+    }
+
+    const response = h.response({
+      status: "success",
+      message: "Recipient updated successfully",
+    });
+    response.code(200);
+    return response;
+  } catch (error) {
+    console.error(error);
+    const response = h.response({
+      status: "error",
+      message: "Recipient data update failed",
+    });
+    return response.code(500);
+  }
+};
+
+const getAllDonorsHandler = async (request, h) => {
+  try {
+    const [rows] = connection.query("SELECT * FROM donors");
+    const response = h.response({
+      status: "success",
+      data: { donors: rows },
+    });
+    response.code(200);
+    return response;
+  } catch (error) {
+    console.error(error);
+    const response = h.response({
+      status: "error",
+      message: "Failed to get all donors",
+    });
+    response.code(500);
+    return response;
+  }
+};
+
+const getDonorByIdHandler = async (request, h) => {
+  const { id_penyumbang } = request.params;
+
+  try {
+    const [rows] = connection.query(
+      "SELECT * FROM donors WHERE id_penyumbang = ?",
+      [id_penyumbang]
+    );
+    if (rows.length === 0) {
+      const response = h.response({
+        status: "error",
+        message: "Donor not found",
+      });
+      response.code(404);
+      return response;
+    }
+
+    const response = h.response({
+      status: "success",
+      data: { donor: rows[0] },
+    });
+    response.code(200);
+    return response;
+  } catch (error) {
+    console.error(error);
+    const response = h.response({
+      status: "error",
+      message: "Failed to get donor by id",
+    });
+    response.code(500);
+    return response;
+  }
+};
+
+const updateDonorHandler = async (request, h) => {
+  const { id_penyumbang } = request.params;
   const {
     nama_penyumbang,
     lokasi_lat_penyumbang,
@@ -149,116 +399,46 @@ const registerDonorHandler = async (request, h) => {
     password_penyumbang,
   } = request.payload;
 
-  const id_penyumbang = await newDonorsIdHandler();
-
-  if (
-    !nama_penyumbang ||
-    !lokasi_lat_penyumbang ||
-    !lokasi_lon_penyumbang ||
-    !alamat_penyumbang ||
-    !kontak_penyumbang ||
-    !email_penyumbang ||
-    !username_penyumbang ||
-    !password_penyumbang
-  ) {
-    const response = h.response({
-      status: "fail",
-      message: "Please fill in all fields",
-    });
-    response.code(400);
-    return response;
-  }
-
-  const newDonor = {
-    id_penyumbang,
-    nama_penyumbang,
-    lokasi_lat_penyumbang,
-    lokasi_lon_penyumbang,
-    alamat_penyumbang,
-    kontak_penyumbang,
-    email_penyumbang,
-    tentang_penyumbang,
-    foto_profil_penyumbang,
-    username_penyumbang,
-    password_penyumbang,
-    role: "donor",
-  };
-
   try {
-    const collectionName = "donors";
-    const donor = await addDoc(collection(db, collectionName), newDonor);
-    const response = h.response({
-      status: "success",
-      message: "Donor registered successfully",
-      data: { id: donor.id, role: newDonor.role },
-    });
-    response.code(201);
-    return response;
-  } catch (error) {
-    const response = h.response({
-      status: "error",
-      message: "Failed to register donor",
-    });
-    response.code(500);
-    return response;
-  }
-};
+    const [result] = connection.query(
+      "UPDATE donors SET nama_penyumbang = ?, lokasi_lat_penyumbang = ?, lokasi_lon_penyumbang = ?, alamat_penyumbang = ?, kontak_penyumbang = ?, email_penyumbang = ?, tentang_penyumbang = ?, foto_profil_penyumbang = ?, username_penyumbang = ?, password_penyumbang = ? WHERE id_penyumbang = ?",
+      [
+        nama_penyumbang,
+        lokasi_lat_penyumbang,
+        lokasi_lon_penyumbang,
+        alamat_penyumbang,
+        kontak_penyumbang,
+        email_penyumbang,
+        tentang_penyumbang,
+        foto_profil_penyumbang,
+        username_penyumbang,
+        password_penyumbang,
+        id_penyumbang,
+      ]
+    );
 
-const getAllRecipientsHandler = async (request, h) => {
-  try {
-    const getRecipients = await getDocs(collection(db, "recipients"));
-    const recipients = getRecipients.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-    const response = h.response({
-      status: "success",
-      data: { recipients },
-    });
-    response.code(200);
-    return response;
-  } catch (error) {
-    const response = h.response({
-      status: "error",
-      message: "Failed to get all recipients",
-    });
-    response.code(500);
-    return response;
-  }
-};
-
-const getAllDonorsHandler = async (request, h) => {
-  try {
-    const getDonors = await getDocs(collection(db, "donors"));
-    const donors = getDonors.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-    const response = h.response({
-      status: "success",
-      data: { donors },
-    });
-    response.code(200);
-    return response;
-  } catch (error) {
-    const response = h.response({
-      status: "error",
-      message: "Failed to get all donors",
-    });
-    response.code(500);
-    return response;
-  }
-};
-
-const getRecipientByIdHandler = async (request, h) => {
-  const { RecipientId } = request.params;
-
-  try {
-    const recipientDoc = await getDocs(doc(db, "recipients", RecipientId));
-    if (!recipientDoc.exists()) {
+    if (
+      !nama_penyumbang ||
+      !lokasi_lat_penyumbang ||
+      !lokasi_lon_penyumbang ||
+      !alamat_penyumbang ||
+      !kontak_penyumbang ||
+      !email_penyumbang ||
+      !username_penyumbang ||
+      !password_penyumbang
+    ) {
       const response = h.response({
-        status: "error",
-        message: "Recipient not found",
+        status: "fail",
+        message: "Please fill in all fields",
+      });
+      response.code(400);
+      return response;
+    }
+
+    if (result.affectedRows === 0) {
+      const response = h.response({
+        status: "fail",
+        message: "Donor not found or no changes made",
       });
       response.code(404);
       return response;
@@ -266,47 +446,80 @@ const getRecipientByIdHandler = async (request, h) => {
 
     const response = h.response({
       status: "success",
-      data: { recipient: recipientDoc.data() },
+      message: "Donor data updated successfully",
+    });
+    return response.code(200);
+  } catch (error) {
+    console.error(error);
+    const response = h.response({
+      status: "error",
+      message: "Donor data update failed",
+    });
+    return response.code(500);
+  }
+};
+
+const deleteRecipientHandler = async (request, h) => {
+  const { id_penerima } = request.params;
+
+  try {
+    const recipientData = connection.query(
+      "WHERE FROM recipients WHERE id_penerima = ?",
+      [id_penerima]
+    );
+
+    if (recipientData.affectedRows === 0) {
+      const response = h.response({
+        status: "fail",
+        message: "Recipient not found",
+      });
+      return response.code(404);
+    }
+
+    const response = h.response({
+      status: "success",
+      message: "Recipient data deleted successfully",
     });
     response.code(200);
     return response;
   } catch (error) {
+    console.error(error);
     const response = h.response({
       status: "error",
-      message: "Failed to get recipient by id",
+      message: "Recipient data deletion failed",
     });
-    response.code(500);
-    return response;
+    return response.code(500);
   }
 };
 
-const getDonorByIdHandler = async (request, h) => {
-  const { DonorId } = request.params;
+const deleteDonorHandler = async (request, h) => {
+  const { id_penyumbang } = request.params;
 
   try {
-    const donorDoc = await getDocs(doc(db, "donors", DonorId));
-    if (!donorDoc.exists()) {
+    const donorData = connection.query(
+      "DELETE FROM donors WHERE id_penyumbang = ?",
+      [id_penyumbang]
+    );
+    if (donorData.affectedRows === 0) {
       const response = h.response({
-        status: "error",
+        status: "fail",
         message: "Donor not found",
       });
       response.code(404);
       return response;
     }
-
     const response = h.response({
       status: "success",
-      data: { id: donorDoc.id, ...donorDoc.data() },
+      message: "Donor data deleted successfully",
     });
-    response.code(200);
-    return response;
+    return response.code(200);
   } catch (error) {
+    console.error(error);
     const response = h.response({
       status: "error",
-      message: "Failed to get donor by id",
+      message: "Donor data deletion failed",
     });
-    response.code(500);
-    return response;
+    return response.code(500);
   }
 };
 
@@ -418,6 +631,7 @@ const createDonationsHandler = async (request, h) => {
     response.code(201);
     return response;
   } catch (error) {
+    console.error(error);
     const response = h.response({
       status: "fail",
       message: "Gagal menambahkan Donasi",
@@ -435,5 +649,9 @@ module.exports = {
   getAllDonorsHandler,
   getRecipientByIdHandler,
   getDonorByIdHandler,
+  updateRecipientHandler,
+  updateDonorHandler,
+  deleteRecipientHandler,
+  deleteDonorHandler,
   createDonationsHandler,
 };
