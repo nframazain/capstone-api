@@ -1,79 +1,126 @@
-const { nanoid } = require("nanoid");
-import { db } from "./services";
-import {
+const {
   collection,
+  doc,
+  setDoc,
   addDoc,
-  getDoc,
-  updateDoc,
-  deleteDoc,
-} from "firebase/firestore";
-const { bcrypt } = require("bcrypt");
+  getDocs,
+} = require("firebase/firestore");
+const { db } = require("./services");
 
-const registerUserHandler = async (request, h) => {
+const newRecipientsIdHandler = async () => {
+  const counterId = doc(db, "counters", "recipients");
+  const counterSnap = await getDoc(counterId);
+
+  let nextId = 1;
+
+  if (counterSnap.exists()) {
+    nextId = counterSnap.data().lastId + 1;
+  }
+
+  await setDoc(counterId, { lastId: nextId });
+  return `T${nextId}`;
+};
+
+const newDonorsIdHandler = async () => {
+  const counterId = doc(db, "counters", "donors");
+  const counterSnap = await getDoc(counterId);
+
+  let nextId = 1;
+
+  if (counterSnap.exists()) {
+    nextId = counterSnap.data().lastId + 1;
+  }
+
+  await setDoc(counterId, { lastId: nextId });
+  return `D${nextId}`;
+};
+
+const registerRecipientHandler = async (request, h) => {
   const {
-    name,
-    email,
-    password,
-    phone,
-    role,
-    foodType, // only for recipients
-    quantityFood, // only for recipients
-    latitude, // only for recipients
-    longitude, // only for recipients
-    conditionFood, // only for recipients
-    childFood, // only for recipients
-    elderlyFood, // only for recipients
-    allergenFood, // only for recipients
+    nama_penerima,
+    lokasi_lat_penerima,
+    lokasi_lon_penerima,
+    makanan_dibutuhkan,
+    jumlah_dibutuhkan,
+    kondisi_makanan_diterima,
+    is_halal_receiver,
+    is_for_child_receiver,
+    is_for_elderly_receiver,
+    is_alergan_free,
+    status_penerima,
+    frekuensi_penerima,
+    alamat_penerima,
+    kontak_penerima,
+    email_penerima,
+    tentang_penerima,
+    foto_profil_penerima,
+    username_penerima,
+    password_penerima,
   } = request.payload;
 
-  if (role === "recipient") {
-    if (
-      !foodType ||
-      !quantityFood ||
-      !conditionFood ||
-      !latitude ||
-      !longitude
-    ) {
-      const response = h.response({
-        status: "fail",
-        message:
-          "Recipient must fill name, email, phone, latitude, and longitude",
-      });
-      response.code(400);
-      return response;
-    }
+  const id_penerima = await newRecipientsIdHandler();
+
+  if (
+    !nama_penerima ||
+    !lokasi_lat_penerima ||
+    !lokasi_lon_penerima ||
+    !makanan_dibutuhkan ||
+    !jumlah_dibutuhkan ||
+    !kondisi_makanan_diterima ||
+    !alamat_penerima ||
+    !kontak_penerima ||
+    !email_penerima ||
+    !username_penerima ||
+    !password_penerima ||
+    !is_halal_receiver ||
+    !is_for_child_receiver ||
+    !is_for_elderly_receiver ||
+    !is_alergan_free ||
+    !status_penerima ||
+    !frekuensi_penerima
+  ) {
+    const response = h.response({
+      status: "fail",
+      message: "Recipient must filled the form",
+    });
+    response.code(400);
+    return response;
   }
-  const newUser = {
-    userId: users.length + 1,
-    name,
-    email,
-    password,
-    phone,
-    role,
-    ...(role === "recipient" && {
-      donationDetails: {
-        foodType,
-        quantityFood,
-        conditionFood,
-        location: {
-          latitude,
-          longitude,
-        },
-        conditionFood,
-        childFood,
-        elderlyFood,
-        allergenFood,
-      },
-    }),
+
+  const newRecipient = {
+    id_penerima,
+    nama_penerima,
+    lokasi_lat_penerima,
+    lokasi_lon_penerima,
+    makanan_dibutuhkan,
+    jumlah_dibutuhkan,
+    kondisi_makanan_diterima,
+    is_halal_receiver,
+    is_for_child_receiver,
+    is_for_elderly_receiver,
+    is_alergan_free,
+    status_penerima,
+    frekuensi_penerima,
+    alamat_penerima,
+    kontak_penerima,
+    email_penerima,
+    tentang_penerima,
+    foto_profil_penerima,
+    username_penerima,
+    password_penerima,
+    role: "recipient",
   };
 
   try {
-    const collectionName = role === "donor" ? "donors" : "recipients";
-    const docRef = await addDoc(collection(db, collectionName), newUser);
+    const collectionName = "recipients";
+    const recipient = await addDoc(
+      collection(db, collectionName),
+      newRecipient
+    );
     const response = h.response({
       status: "success",
       message: "User created successfully",
-      data: { id: docRef.id, role: newUser.role },
+      data: { id: recipient.id, role: newRecipient.role },
     });
     response.code(201);
     return response;
@@ -88,84 +135,175 @@ const registerUserHandler = async (request, h) => {
 };
 // end register user handler
 
-const getUserHandler = async (request, h) => {
-  const { id } = request.params;
+const registerDonorHandler = async (request, h) => {
+  const {
+    nama_penyumbang,
+    lokasi_lat_penyumbang,
+    lokasi_lon_penyumbang,
+    alamat_penyumbang,
+    kontak_penyumbang,
+    email_penyumbang,
+    tentang_penyumbang,
+    foto_profil_penyumbang,
+    username_penyumbang,
+    password_penyumbang,
+  } = request.payload;
+
+  const id_penyumbang = await newDonorsIdHandler();
+
+  if (
+    !nama_penyumbang ||
+    !lokasi_lat_penyumbang ||
+    !lokasi_lon_penyumbang ||
+    !alamat_penyumbang ||
+    !kontak_penyumbang ||
+    !email_penyumbang ||
+    !username_penyumbang ||
+    !password_penyumbang
+  ) {
+    const response = h.response({
+      status: "fail",
+      message: "Please fill in all fields",
+    });
+    response.code(400);
+    return response;
+  }
+
+  const newDonor = {
+    id_penyumbang,
+    nama_penyumbang,
+    lokasi_lat_penyumbang,
+    lokasi_lon_penyumbang,
+    alamat_penyumbang,
+    kontak_penyumbang,
+    email_penyumbang,
+    tentang_penyumbang,
+    foto_profil_penyumbang,
+    username_penyumbang,
+    password_penyumbang,
+    role: "donor",
+  };
 
   try {
-    const getUser = await getDoc(doc(db, "users", id));
+    const collectionName = "donors";
+    const donor = await addDoc(collection(db, collectionName), newDonor);
+    const response = h.response({
+      status: "success",
+      message: "Donor registered successfully",
+      data: { id: donor.id, role: newDonor.role },
+    });
+    response.code(201);
+    return response;
+  } catch (error) {
+    const response = h.response({
+      status: "error",
+      message: "Failed to register donor",
+    });
+    response.code(500);
+    return response;
+  }
+};
 
-    if (!getUser.exists()) {
+const getAllRecipientsHandler = async (request, h) => {
+  try {
+    const getRecipients = await getDocs(collection(db, "recipients"));
+    const recipients = getRecipients.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+    const response = h.response({
+      status: "success",
+      data: { recipients },
+    });
+    response.code(200);
+    return response;
+  } catch (error) {
+    const response = h.response({
+      status: "error",
+      message: "Failed to get all recipients",
+    });
+    response.code(500);
+    return response;
+  }
+};
+
+const getAllDonorsHandler = async (request, h) => {
+  try {
+    const getDonors = await getDocs(collection(db, "donors"));
+    const donors = getDonors.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+    const response = h.response({
+      status: "success",
+      data: { donors },
+    });
+    response.code(200);
+    return response;
+  } catch (error) {
+    const response = h.response({
+      status: "error",
+      message: "Failed to get all donors",
+    });
+    response.code(500);
+    return response;
+  }
+};
+
+const getRecipientByIdHandler = async (request, h) => {
+  const { RecipientId } = request.params;
+
+  try {
+    const recipientDoc = await getDocs(doc(db, "recipients", RecipientId));
+    if (!recipientDoc.exists()) {
       const response = h.response({
-        status: "fail",
-        message: "User not found",
+        status: "error",
+        message: "Recipient not found",
       });
       response.code(404);
       return response;
     }
-    const user = userDoc.data();
+
     const response = h.response({
       status: "success",
-      message: "User found",
-      data: user,
+      data: { recipient: recipientDoc.data() },
     });
     response.code(200);
     return response;
   } catch (error) {
     const response = h.response({
-      status: "fail",
-      message: "Failed to get user",
+      status: "error",
+      message: "Failed to get recipient by id",
     });
     response.code(500);
     return response;
   }
 };
 
-const updateUserHandler = async (request, h) => {
-  const { id } = request.params;
-  const { name, password, email, phone, role } = request.payload;
+const getDonorByIdHandler = async (request, h) => {
+  const { DonorId } = request.params;
 
   try {
-    const changeUser = doc(db, "users", id);
-    await updateDoc(changeUser, {
-      name,
-      password,
-      email,
-      phone,
-      role,
-    });
+    const donorDoc = await getDocs(doc(db, "donors", DonorId));
+    if (!donorDoc.exists()) {
+      const response = h.response({
+        status: "error",
+        message: "Donor not found",
+      });
+      response.code(404);
+      return response;
+    }
 
     const response = h.response({
       status: "success",
-      message: "User updated",
+      data: { id: donorDoc.id, ...donorDoc.data() },
     });
     response.code(200);
     return response;
   } catch (error) {
     const response = h.response({
-      status: "fail",
-      message: "Failed to update user",
-    });
-    response.code(500);
-    return response;
-  }
-};
-
-const deleteUserHandler = async (request, h) => {
-  const { id } = request.params;
-
-  try {
-    await deleteDoc(doc(db, "users", id));
-
-    const response = h.response({
-      status: "success",
-      message: "User deleted",
-    });
-    response.code(200);
-    return response;
-  } catch (error) {
-    const response = h.response({
-      status: "fail",
-      message: "Failed to delete user",
+      status: "error",
+      message: "Failed to get donor by id",
     });
     response.code(500);
     return response;
@@ -290,10 +428,12 @@ const createDonationsHandler = async (request, h) => {
 };
 
 module.exports = {
-  registerUserHandler,
+  registerRecipientHandler,
+  registerDonorHandler,
   loginUserHandler,
-  getUserHandler,
-  updateUserHandler,
-  deleteUserHandler,
+  getAllRecipientsHandler,
+  getAllDonorsHandler,
+  getRecipientByIdHandler,
+  getDonorByIdHandler,
   createDonationsHandler,
 };

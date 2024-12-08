@@ -1,32 +1,44 @@
 const {
-  registerUserHandler,
+  registerRecipientHandler,
+  registerDonorHandler,
   loginUserHandler,
-  createDonations,
-  getUserHandler,
-  updateUserHandler,
-  deleteUserHandler,
-} = require(".handler/");
+  getAllRecipientsHandler,
+  getAllDonorsHandler,
+  getDonorByIdHandler,
+  getRecipientByIdHandler,
+  createDonationsHandler,
+} = require("./handler");
 
 const routes = [
   {
     method: "POST",
-    path: "/users",
-    handler: registerUserHandler,
+    path: "/recipients",
+    handler: registerRecipientHandler,
+  },
+  {
+    method: "POST",
+    path: "/donors",
+    handler: registerDonorHandler,
   },
   {
     method: "GET",
-    path: "/users",
-    handler: getUserHandler,
+    path: "/recipients",
+    handler: getAllRecipientsHandler,
   },
   {
-    method: "PUT",
-    path: "/users/{id}",
-    handler: updateUserHandler,
+    method: "GET",
+    path: "/donors",
+    handler: getAllDonorsHandler,
   },
   {
-    method: "DELETE",
-    path: "/users/{id}",
-    handler: deleteUserHandler,
+    method: "GET",
+    path: "/recipients/{recipientId}",
+    handler: getRecipientByIdHandler,
+  },
+  {
+    method: "GET",
+    path: "/donors/{donorId}",
+    handler: getDonorByIdHandler,
   },
   {
     method: "POST",
@@ -36,7 +48,7 @@ const routes = [
   {
     method: "POST",
     path: "/donations",
-    handler: createDonations,
+    handler: createDonationsHandler,
   },
 ];
 
