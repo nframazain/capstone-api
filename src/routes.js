@@ -1,8 +1,8 @@
 const {
   registerUserHandler,
   loginUserHandler,
-  createDonations,
-} = require(".handler/");
+  createDonationsHandler,
+} = require("./handler");
 
 const routes = [
   {
@@ -18,7 +18,7 @@ const routes = [
   {
     method: "POST",
     path: "/donations",
-    handler: createDonations,
+    handler: createDonationsHandler,
   },
 ];
 
