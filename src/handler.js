@@ -289,10 +289,35 @@ const createDonationsHandler = async (request, h) => {
   }
 };
 
+const getAllDonationsHandler = (request, h) => {
+  if (newDonations.length === 0) {
+    return h
+      .response({ status: 'success', data: { newDonations: [{}, {}] } })
+      .code(200);
+  }
+
+  const formattedDonations = newDonations.map((donation) => ({
+    id: donation.id,
+    foodType: foodType,
+    quantity: quantityFood,
+    location: {
+      latitude: latitude,
+      longitude: longitude,
+    },
+    conditions: conditionFood,
+    foodType2: childFood, elderlyFood, allergenFood,
+  }));
+
+  return h
+    .response({ status: 'success', data: { donations: formattedDonations } })
+    .code(200);
+};
+
 module.exports = {
   registerUserHandler,
   loginUserHandler,
   updateUserHandler,
   deleteUserByIdHandler,
   createDonationsHandler,
+  getAllDonationsHandler,
 };
