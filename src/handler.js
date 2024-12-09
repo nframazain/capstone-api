@@ -86,9 +86,9 @@ const registerUserHandler = (request, h) => {
 };
 
 const loginUserHandler = (request, h) => {
-  const { email, password } = request.payload;
+  const { email, password } = request.params;
 
-  const user = users.find(
+  const user = user.find(
     (user) => user.email === email && user.password === password
   );
 
@@ -107,6 +107,93 @@ const loginUserHandler = (request, h) => {
     data: { id: user.userId, role: user.role },
   });
   response.code(200);
+  return response;
+};
+
+const updateUserHandler = (request, h) => {
+  const { userId } = request.params;
+
+  const {
+    name,
+    email,
+    phone,
+  } = request.payload;
+  const updatedAt = new Date().toISOString();
+  const index = users.findIndex((n) => n.id === userId);
+
+  if (index !== -1) {
+    if (!name) {
+      const response = h.response({
+        status: 'fail',
+        message: 'Gagal memperbarui user. Mohon isi nama user',
+      });
+      response.code(400);
+      return response;
+    }
+
+    if (!email) {
+      const response = h.response({
+        status: 'fail',
+        message:
+          'Gagal memperbarui user. Mohon masukkan Email',
+      });
+      response.code(400);
+      return response;
+    }
+
+    if (!phone) {
+      const response = h.response({
+        status: 'fail',
+        message:
+          'Gagal memperbarui user. Mohon masukkan nomor hp',
+      });
+      response.code(400);
+      return response;
+    }
+
+    users[index] = {
+      ...users[index],
+      name,
+      email,
+      phone,
+    };
+
+    const response = h.response({
+      status: 'success',
+      message: 'User berhasil diperbarui',
+    });
+    response.code(200);
+    return response;
+  }
+
+  const response = h.response({
+    status: 'fail',
+    message: 'Gagal memperbarui user. Id tidak ditemukan',
+  });
+  response.code(404);
+  return response;
+};
+
+const deleteUserByIdHandler = (request, h) => {
+  const { userId } = request.params;
+  const index = users.findIndex((user) => user.id === userId);
+
+  if (index !== -1) {
+    users.splice(index, 1);
+
+    const response = h.response({
+      status: 'success',
+      message: 'User berhasil dihapus',
+    });
+    response.code(200);
+    return response;
+  }
+
+  const response = h.response({
+    status: 'fail',
+    message: 'User gagal dihapus. Id tidak ditemukan',
+  });
+  response.code(404);
   return response;
 };
 
@@ -205,5 +292,7 @@ const createDonationsHandler = async (request, h) => {
 module.exports = {
   registerUserHandler,
   loginUserHandler,
+  updateUserHandler,
+  deleteUserByIdHandler,
   createDonationsHandler,
 };
